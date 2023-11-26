@@ -2,12 +2,15 @@ package com.ex.repository;
 
 import com.ex.dto.MemberDto;
 import com.ex.entity.Member;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 //@Repository 생략 가능 - 스프링 데이터 JPA 가 자동으로 처리, 예외 변환 과정도 자동으로 처리
 public interface MemberRepository extends JpaRepository<Member, Long> {
@@ -15,13 +18,21 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
     //메서드 이름으로 쿼리 생성
     //스프링 데이터 JPA 가 메소드 이름을 분석해서 JPQL 을 생성하고 실행
     //엔티티의 필드명이 일치하지 않으면 애플리케이션 로딩 시점에 오류가 발생
+    //쿼리 메소드의 필터 조건을 따라야 함
+    //SELECT - find...By, read...By, query...By, get...By, ...에 식별하기 위한 내용이 들어가도 된다
+    //COUNT - count...By
+    //EXISTS - exists...By
+    //DELETE - delete...By, remove...By
+    //DISTINCT - findDistinct ...
+    //LIMIT - findFirst3..., findTop ...
+    //https://docs.spring.io/spring-data/jpa/reference/jpa/query-methods.html
     List<Member> findByUsernameAndAgeGreaterThan(String username, int age);
 
     List<Member> findTop3By();
 
     long countByAgeLessThan(int age);
 
-    List<Member> findByUsernameIn(List<String> names);
+    List<Member> findByUsernameIn(List<String> names); //컬렉션 타입으로 IN 절 지원
 
     //Named 쿼리 호출
     //JPQL 을 명확하게 작성했을 땐 @Param 애노테이션이 필요
@@ -44,5 +55,16 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
     //new 명령어를 사용해야 한다(JPA 와 동일)
     @Query("select new com.ex.dto.MemberDto(m.id, m.username, t.name) from Member m join m.team t")
     List<MemberDto> findMemberDto();
+
+    //다양한 반환 타입 지원
+    List<Member> findListByUsername(String username);
+    Member findMemberByUsername(String username); //두 개 이상일 시 NonUniqueResultException
+    Optional<Member> findOptionalByUsername(String username);
+
+    //페이징
+    //카운트 쿼리 분리 - 카운트는 left join 등 할 필요없음
+    //@Query(value = "select m from Member m left join m.team t", countQuery = "select count(m.username) from Member m")
+    Page<Member> findByAge(int age, Pageable pageable);
+    Slice<Member> findSliceByAge(int age, Pageable pageable);
 
 }

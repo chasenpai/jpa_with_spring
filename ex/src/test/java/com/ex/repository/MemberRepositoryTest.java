@@ -6,11 +6,16 @@ import com.ex.entity.Team;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.Sort;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
 
@@ -172,6 +177,51 @@ class MemberRepositoryTest {
         List<MemberDto> result = memberRepository.findMemberDto();
         assertThat(result.get(0).getUsername()).isEqualTo("memberA");
         assertThat(result.get(0).getTeamName()).isEqualTo("teamA");
+    }
+
+    @Test
+    void returnType() {
+
+        Member memberA = new Member("memberA");
+        memberRepository.save(memberA);
+
+        List<Member> list = memberRepository.findListByUsername("memberA");
+        Member member = memberRepository.findMemberByUsername("memberA");
+        Optional<Member> optional = memberRepository.findOptionalByUsername("memberA");
+    }
+
+    @Test
+    void paging() {
+
+        memberRepository.save(new Member("memberA", 10));
+        memberRepository.save(new Member("memberB", 10));
+        memberRepository.save(new Member("memberC", 10));
+        memberRepository.save(new Member("memberD", 10));
+        memberRepository.save(new Member("memberE", 10));
+
+        int age = 10;
+
+        //Page 는 1이 아닌 0부터 시작, 첫번째 파라미터는 현재 페이지, 두번째 파라미터는 조회할 데이터 수
+        PageRequest pageRequest = PageRequest.of(0, 3,
+                Sort.by(Sort.Direction.DESC, "username"));
+
+        Page<Member> page = memberRepository.findByAge(age, pageRequest);
+
+        List<Member> content = page.getContent();
+        long totalElements = page.getTotalElements();
+
+        assertThat(content.size()).isEqualTo(3); //조회된 데이터 수
+        assertThat(totalElements).isEqualTo(5); //전체 데이터 수
+        assertThat(page.getNumber()).isEqualTo(0); //페이지 번호
+        assertThat(page.getTotalPages()).isEqualTo(2); //전체 페이지 수
+        assertThat(page.isFirst()).isTrue(); //첫번째 항목 여부
+        assertThat(page.hasNext()).isTrue(); //다음 페이지 유무
+
+        //Slice - limit + 1 > 다음 페이지 여부 확인
+//        Slice<Member> slice = memberRepository.findSliceByAge(age, pageRequest);
+
+        //DTO 변환
+        Page<MemberDto> pageDto = page.map(m -> new MemberDto(m.getId(), m.getUsername(), null));
     }
 
 }
