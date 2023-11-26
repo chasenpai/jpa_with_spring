@@ -1,6 +1,8 @@
 package com.ex.repository;
 
+import com.ex.dto.MemberDto;
 import com.ex.entity.Member;
+import com.ex.entity.Team;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -19,6 +21,8 @@ class MemberRepositoryTest {
 
     @Autowired
     MemberRepository memberRepository; //스프링 데이터 JPA 가 프록시로 구현체를 만들어준다
+    @Autowired
+    TeamRepository teamRepository;
 
     @Test
     void member() {
@@ -129,6 +133,45 @@ class MemberRepositoryTest {
 
         List<Member> result = memberRepository.findByUsername("memberA");
         assertThat(result.get(0).getUsername()).isEqualTo("memberA");
+    }
+
+    @Test
+    void queryAnnotation() {
+
+        Member memberA = new Member("memberA", 20);
+        Member memberB = new Member("memberB", 30);
+        memberRepository.save(memberA);
+        memberRepository.save(memberB);
+
+        List<Member> result = memberRepository.findMember("memberA", 20);
+        assertThat(result.get(0)).isEqualTo(memberA);
+    }
+
+    @Test
+    void findUsernameList() {
+
+        Member memberA = new Member("memberA", 20);
+        Member memberB = new Member("memberB", 30);
+        memberRepository.save(memberA);
+        memberRepository.save(memberB);
+
+        List<String> result = memberRepository.findUsernameList();
+        assertThat(result.get(0)).isEqualTo("memberA");
+        assertThat(result.get(1)).isEqualTo("memberB");
+    }
+
+    @Test
+    void findMemberDto() {
+
+        Team teamA = new Team("teamA");
+        teamRepository.save(teamA);
+
+        Member memberA = new Member("memberA", 20, teamA);
+        memberRepository.save(memberA);
+        
+        List<MemberDto> result = memberRepository.findMemberDto();
+        assertThat(result.get(0).getUsername()).isEqualTo("memberA");
+        assertThat(result.get(0).getTeamName()).isEqualTo("teamA");
     }
 
 }
