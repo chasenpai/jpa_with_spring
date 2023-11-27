@@ -3,6 +3,8 @@ package com.ex.repository;
 import com.ex.dto.MemberDto;
 import com.ex.entity.Member;
 import com.ex.entity.Team;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -28,6 +30,8 @@ class MemberRepositoryTest {
     MemberRepository memberRepository; //스프링 데이터 JPA 가 프록시로 구현체를 만들어준다
     @Autowired
     TeamRepository teamRepository;
+    @PersistenceContext
+    EntityManager em;
 
     @Test
     void member() {
@@ -222,6 +226,29 @@ class MemberRepositoryTest {
 
         //DTO 변환
         Page<MemberDto> pageDto = page.map(m -> new MemberDto(m.getId(), m.getUsername(), null));
+    }
+
+    @Test
+    void bulkUpdate() {
+
+        memberRepository.save(new Member("memberA", 10));
+        memberRepository.save(new Member("memberB", 15));
+        memberRepository.save(new Member("memberC", 20));
+        memberRepository.save(new Member("memberD", 25));
+        memberRepository.save(new Member("memberE", 30));
+
+        int updatedCount = memberRepository.bulkAgePlus(20);
+        assertThat(updatedCount).isEqualTo(3);
+
+        //DB는 반영되었지만 영속성 컨텍스트는 그대로 - 영속성 컨텍스트 초기화 필요
+        List<Member> resultBeforeClear = memberRepository.findByUsername("memberE");
+        assertThat(resultBeforeClear.get(0).getAge()).isEqualTo(30);
+
+        em.flush();
+        em.clear();
+
+        List<Member> resultAfterClear = memberRepository.findByUsername("memberE");
+        assertThat(resultAfterClear.get(0).getAge()).isEqualTo(31);
     }
 
 }
