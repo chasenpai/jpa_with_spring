@@ -305,4 +305,31 @@ class MemberRepositoryTest {
         System.out.println("member.team = " + graphResult3.get(0).getTeam().getName());
     }
 
+    @Test
+    void queryHint() {
+
+        Member memberA = new Member("memberA", 10);
+        memberRepository.save(memberA);
+
+        em.flush();
+        em.clear();
+
+        Member findMember = memberRepository.findReadOnlyByUsername(memberA.getUsername());
+        findMember.updateUsername("memberB"); //read only - 변경 무시, 내부적으로 최적화를 다 해버리고 스냅샷을 만들지 않음
+
+        em.flush();
+    }
+
+    @Test
+    void lock() {
+
+        Member memberA = new Member("memberA", 10);
+        memberRepository.save(memberA);
+
+        em.flush();
+        em.clear();
+
+        Member findMember = memberRepository.findLockByUsername(memberA.getUsername());
+    }
+
 }
