@@ -11,6 +11,7 @@ import lombok.*;
         name="Member.findByUsername",
         query="select m from Member m where m.username = :username" //문법에 오류가 있으면 애플리케이션 로딩 시점에 알 수 있다
 )
+@NamedEntityGraph(name = "Member.all", attributeNodes = @NamedAttributeNode("team"))
 public class Member {
 
     @Id

@@ -240,15 +240,69 @@ class MemberRepositoryTest {
         int updatedCount = memberRepository.bulkAgePlus(20);
         assertThat(updatedCount).isEqualTo(3);
 
-        //DB는 반영되었지만 영속성 컨텍스트는 그대로 - 영속성 컨텍스트 초기화 필요
+        //DB는 반영되었지만 영속성 컨텍스트는 그대로
         List<Member> resultBeforeClear = memberRepository.findByUsername("memberE");
         assertThat(resultBeforeClear.get(0).getAge()).isEqualTo(30);
 
+        //영속성 컨텍스트에 엔티티가 없는 상태에서 벌크 연산을 먼저하는 것이 좋다
+        //부득이하게 영속성 컨텍스트에 엔티티가 있으면 벌크 연산 직후 컨텍스트를 초기화 한다
         em.flush();
         em.clear();
 
         List<Member> resultAfterClear = memberRepository.findByUsername("memberE");
         assertThat(resultAfterClear.get(0).getAge()).isEqualTo(31);
+    }
+
+    @Test
+    void findMemberLazy() {
+
+        Team teamA = new Team("teamA");
+        Team teamB = new Team("teamB");
+        teamRepository.save(teamA);
+        teamRepository.save(teamB);
+
+        Member memberA = new Member("memberA", 10, teamA);
+        Member memberB = new Member("memberB", 10, teamB);
+        memberRepository.save(memberA);
+        memberRepository.save(memberB);
+
+        em.flush();
+        em.clear();
+
+        //Fetch Join
+        List<Member> fetchResult = memberRepository.findAllFetchJoin();
+        for (Member member : fetchResult) {
+            System.out.println("member = " + member.getUsername());
+            System.out.println("member.teamClass = " + member.getTeam().getClass());
+            System.out.println("member.team = " + member.getTeam().getName());
+        }
+
+        em.flush();
+        em.clear();
+
+        //EntityGraph
+        List<Member> graphResult1 = memberRepository.findAll();
+        for (Member member : graphResult1) {
+            System.out.println("member = " + member.getUsername());
+            System.out.println("member.teamClass = " + member.getTeam().getClass());
+            System.out.println("member.team = " + member.getTeam().getName());
+        }
+
+        em.flush();
+        em.clear();
+
+        List<Member> graphResult2 = memberRepository.findEntityGraphByUsername("memberA");
+        System.out.println("member = " + graphResult2.get(0).getUsername());
+        System.out.println("member.teamClass = " + graphResult2.get(0).getTeam().getClass());
+        System.out.println("member.team = " + graphResult2.get(0).getTeam().getName());
+
+        em.flush();
+        em.clear();
+
+        List<Member> graphResult3 = memberRepository.findNamedEntityGraphByUsername("memberA");
+        System.out.println("member = " + graphResult3.get(0).getUsername());
+        System.out.println("member.teamClass = " + graphResult3.get(0).getTeam().getClass());
+        System.out.println("member.team = " + graphResult3.get(0).getTeam().getName());
     }
 
 }

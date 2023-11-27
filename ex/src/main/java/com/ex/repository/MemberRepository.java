@@ -5,6 +5,7 @@ import com.ex.entity.Member;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -73,4 +74,19 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
     @Query("update Member m set m.age = m.age + 1 where m.age >= 20")
     int bulkAgePlus(@Param("age") int age);
 
+    //페치 조인
+    @Query("select m from Member m left join fetch m.team t")
+    List<Member> findAllFetchJoin();
+
+    //EntityGraph
+    //페치 조인의 간편 버전
+    @Override
+    @EntityGraph(attributePaths = {"team"})
+    List<Member> findAll();
+
+    @EntityGraph(attributePaths = {"team"})
+    List<Member> findEntityGraphByUsername(String username);
+
+    @EntityGraph("Member.all") //NamedEntityGraph
+    List<Member> findNamedEntityGraphByUsername(String username);
 }
