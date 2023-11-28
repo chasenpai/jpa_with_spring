@@ -332,4 +332,14 @@ class MemberRepositoryTest {
         Member findMember = memberRepository.findLockByUsername(memberA.getUsername());
     }
 
+    @Test
+    void callCustom() {
+
+        Member memberA = new Member("memberA", 10);
+        memberRepository.save(memberA);
+
+        List<Member> members = memberRepository.findMemberCustom();
+        assertThat(members.size()).isEqualTo(1);
+    }
+
 }

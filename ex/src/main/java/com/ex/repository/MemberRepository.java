@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Optional;
 
 //@Repository 생략 가능 - 스프링 데이터 JPA 가 자동으로 처리, 예외 변환 과정도 자동으로 처리
-public interface MemberRepository extends JpaRepository<Member, Long> {
+public interface MemberRepository extends JpaRepository<Member, Long>, MemberRepositoryCustom {
 
     //메서드 이름으로 쿼리 생성
     //스프링 데이터 JPA 가 메소드 이름을 분석해서 JPQL 을 생성하고 실행
