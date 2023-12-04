@@ -5,13 +5,11 @@ import com.ex.entity.Member;
 import com.ex.entity.Team;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Slice;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.*;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -340,6 +338,45 @@ class MemberRepositoryTest {
 
         List<Member> members = memberRepository.findMemberCustom();
         assertThat(members.size()).isEqualTo(1);
+    }
+
+    @Test
+    void queryByExample() {
+
+        Team teamA = new Team("teamA");
+        em.persist(teamA);
+
+        Member memberA = new Member("memberA", 0 , teamA);
+        Member memberB = new Member("memberB", 0 , teamA);
+        em.persist(memberA);
+        em.persist(memberB);
+
+        em.flush();
+        em.clear();
+
+        /**
+         * QueryByExample
+         * - 동적 쿼리를 편리하게 처리하고 도메인 객체를 그대로 사용
+         * - 데이터 저장소를 RDB 에서 NOSQL 로 변경해도 코드 변경이 없게 추상화 되어 있다
+         * - 스프링 데이터 JpaRepository 에 포함되어 있어 바로 사용 가능
+         * - 하지만 내부 조인만 가능하고 외부 조인을 불가능
+         * - 중첩 제약조건이 안되는 등 여러가지 제약이 따름
+         * - 단순한 매칭 조건만 지원
+         * - 그냥 QueryDSL 쓰자
+         */
+
+        //Probe - 필드에 데이터가 있는 실제 도메인 객체
+        Member member = new Member("memberA");
+        Team team = new Team("teamA");
+        member.changeTeam(team);
+        //ExampleMatcher - 특정 필드를 일치시키는 상세한 정보 제공, 재사용 가능
+        ExampleMatcher matcher = ExampleMatcher.matching().withIgnorePaths("age");
+        //Example - Probe 와 ExampleMatcher 로 구성, 쿼리를 생성하는데 사용
+        Example<Member> example = Example.of(member, matcher);
+
+        List<Member> result = memberRepository.findAll(example);
+        assertThat(result.size()).isEqualTo(1);
+        assertThat(result.get(0).getUsername()).isEqualTo("memberA");
     }
 
 }
