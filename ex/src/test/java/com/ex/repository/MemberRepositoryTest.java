@@ -3,9 +3,11 @@ package com.ex.repository;
 import com.ex.dto.MemberDto;
 import com.ex.entity.Member;
 import com.ex.entity.Team;
+import com.ex.projections.NestedClosedProjections;
+import com.ex.projections.UsernameOnly;
+import com.ex.projections.UsernameOnlyDto;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -13,7 +15,6 @@ import org.springframework.data.domain.*;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -377,6 +378,42 @@ class MemberRepositoryTest {
         List<Member> result = memberRepository.findAll(example);
         assertThat(result.size()).isEqualTo(1);
         assertThat(result.get(0).getUsername()).isEqualTo("memberA");
+    }
+
+    @Test
+    void projections() {
+
+        Team teamA = new Team("teamA");
+        em.persist(teamA);
+
+        Member memberA = new Member("memberA", 0 , teamA);
+        Member memberB = new Member("memberB", 0 , teamA);
+        em.persist(memberA);
+        em.persist(memberB);
+
+        em.flush();
+        em.clear();
+
+        List<UsernameOnly> result1 = memberRepository.findProjectionsByUsername("memberA");
+        System.out.println("username = " + result1.get(0).getUsername());
+
+//        List<UsernameOnlyDto> result2 = memberRepository.findProjectionsByUsername("memberA");
+//        System.out.println("username = " + result2.get(0).getUsername());
+
+//        List<UsernameOnlyDto> result3 = memberRepository.findProjectionsGenericByUsername("memberA", UsernameOnlyDto.class);
+//        System.out.println("username = " + result3.get(0).getUsername());
+
+        //중첩구조
+        List<NestedClosedProjections> result4 = memberRepository.findProjectionsGenericByUsername(
+                "memberA", NestedClosedProjections.class);
+        System.out.println("username = " + result4.get(0).getUsername());
+        System.out.println("teamName = " + result4.get(0).getTeam().getName());
+
+        /**
+         * 프로젝션 대상이 루트 엔티티면 SELECT 절 최적화 가능
+         * 루트 대상이 아니라면 LEFT OUTER JOIN 처리 & 모든 필드 SELECT
+         * 복잡한 쿼리를 해결하기엔 한계가 있다 그냥 querydsl 쓰자
+         */
     }
 
 }

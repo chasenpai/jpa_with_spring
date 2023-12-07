@@ -2,6 +2,7 @@ package com.ex.repository;
 
 import com.ex.dto.MemberDto;
 import com.ex.entity.Member;
+import com.ex.projections.UsernameOnly;
 import jakarta.persistence.LockModeType;
 import jakarta.persistence.QueryHint;
 import org.springframework.data.domain.Page;
@@ -97,4 +98,12 @@ public interface MemberRepository extends JpaRepository<Member, Long>, MemberRep
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     Member findLockByUsername(String username);
 
+    //인터페이스 기반 Projection
+    List<UsernameOnly> findProjectionsByUsername(String username);
+
+    //클래스 기반 Projection
+    //List<UsernameOnlyDto> findProjectionsByUsername(String username);
+
+    //동적 Projection
+    <T> List<T> findProjectionsGenericByUsername(String username, Class<T> type);
 }
