@@ -2,6 +2,7 @@ package com.ex.repository;
 
 import com.ex.dto.MemberDto;
 import com.ex.entity.Member;
+import com.ex.projections.MemberProjection;
 import com.ex.projections.UsernameOnly;
 import jakarta.persistence.LockModeType;
 import jakarta.persistence.QueryHint;
@@ -98,12 +99,32 @@ public interface MemberRepository extends JpaRepository<Member, Long>, MemberRep
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     Member findLockByUsername(String username);
 
-    //인터페이스 기반 Projection
+    //스프링 데이터 Projection
+    //인터페이스 기반
     List<UsernameOnly> findProjectionsByUsername(String username);
 
-    //클래스 기반 Projection
+    //클래스 기반
     //List<UsernameOnlyDto> findProjectionsByUsername(String username);
 
-    //동적 Projection
+    //동적
     <T> List<T> findProjectionsGenericByUsername(String username, Class<T> type);
+
+    //네이티브 쿼리
+    @Query(value = "select * from member where username = ?", nativeQuery = true)
+    Member findByNativeQuery(String username);
+
+    //네이티브 쿼리 + 스프링 데이터 Projection
+    @Query(
+            value = "select " +
+                        "m.member_id as id, m.username, t.name as teamName " +
+                    "from " +
+                        "member m " +
+                    "left join " +
+                        "team t",
+            countQuery = "select " +
+                            "count(*) " +
+                          "from member",
+            nativeQuery = true
+    )
+    Page<MemberProjection> findByNativeProjection(Pageable pageable);
 }

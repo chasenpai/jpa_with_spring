@@ -3,6 +3,7 @@ package com.ex.repository;
 import com.ex.dto.MemberDto;
 import com.ex.entity.Member;
 import com.ex.entity.Team;
+import com.ex.projections.MemberProjection;
 import com.ex.projections.NestedClosedProjections;
 import com.ex.projections.UsernameOnly;
 import com.ex.projections.UsernameOnlyDto;
@@ -414,6 +415,35 @@ class MemberRepositoryTest {
          * 루트 대상이 아니라면 LEFT OUTER JOIN 처리 & 모든 필드 SELECT
          * 복잡한 쿼리를 해결하기엔 한계가 있다 그냥 querydsl 쓰자
          */
+    }
+
+    @Test
+    void nativeQuery() {
+
+        Team teamA = new Team("teamA");
+        em.persist(teamA);
+
+        Member memberA = new Member("memberA", 0 , teamA);
+        Member memberB = new Member("memberB", 0 , teamA);
+        em.persist(memberA);
+        em.persist(memberB);
+
+        em.flush();
+        em.clear();
+
+        /**
+         * 네이티브 쿼리는 진짜 어쩔 수 없을 때 사용
+         * 여러가지 제약이 따르기 때문에 차라리 JdbcTemplate & MyBatis 를 권장
+         */
+        Member result1 = memberRepository.findByNativeQuery("memberA");
+        System.out.println("username = " + result1.getUsername());
+
+        Page<MemberProjection> result2 = memberRepository.findByNativeProjection(
+                PageRequest.of(0, 10));
+        for (MemberProjection member : result2.getContent()) {
+            System.out.println("member = " + member.getUsername());
+            System.out.println("team = " + member.getTeamName());
+        }
     }
 
 }
